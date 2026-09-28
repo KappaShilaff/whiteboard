@@ -10,6 +10,7 @@ import {
   type LocalVcsCommitSummary,
   type LocalVcsDiffFileSummary,
   type LocalVcsKind,
+  LocalVcsToolsMissingError,
   createBlobBatchReader,
   detectLocalVcs,
   diffFileSummariesTrees,
@@ -539,6 +540,10 @@ export class LocalReviewData {
   }): AsyncGenerator<StructuralDiffEvent> {
     if (file !== undefined) checkRelativePath(file);
 
+    // Waiting covers a release already queued. One that starts mid-stream
+    // fails this stream, and the reader's next request rebuilds the checkout.
+    await this.workspaceManager?.released(reviewId);
+
     const rootPath = await ensureReviewPinnedCheckout({
       rootPath: this.store.repositoryPath(pins.repositoryId),
       ref: pins.head,
@@ -717,6 +722,7 @@ export class LocalReviewData {
 
   async forgetRepository(repositoryId: string) {
     await this.closeReader(repositoryId);
+    this.forgetWorktree(repositoryId);
     this.repositories.delete(repositoryId);
 
     for (const key of this.trackedFiles.keys())
@@ -747,7 +753,12 @@ export class LocalReviewData {
       );
     });
 
-    const vcs = await detectLocalVcs(resolved);
+    const vcs = await detectLocalVcs(resolved).catch((cause: unknown) => {
+      if (cause instanceof LocalVcsToolsMissingError)
+        throw new ReviewInputError(cause.message);
+
+      throw cause;
+    });
 
     if (!vcs) throw new ReviewInputError("Choose a Git or jj repository.");
 
@@ -897,13 +908,17 @@ export class LocalReviewData {
     repository: { id?: string; preferred?: string },
   ): Promise<ResolvedPullRequest> {
     const deps = this.options.pullRequests ?? defaultPullRequestDeps;
-    const { slug, number } = pullRequestAddress(url);
-    const record = readPullRequest(url, deps);
+    const { host, slug, number } = pullRequestAddress(url);
 
-    record.catch(() => {});
+    // Only a host a registered checkout already fetches from is contacted.
+    const checkout = await this.pullRequestCheckout(
+      host,
+      slug,
+      repository,
+      deps,
+    );
 
-    const checkout = await this.pullRequestCheckout(slug, repository, deps);
-    const pullRequest = await record;
+    const pullRequest = await readPullRequest(url, deps);
 
     const { head, base } = await fetchPullRequest(
       { ...checkout, pullRequest },
@@ -918,8 +933,9 @@ export class LocalReviewData {
       title: pullRequest.title.trim() || `PR #${number}`,
     };
   }
-  /** A registered checkout with a remote for owner/repo, and that remote. */
+  /** A registered checkout with a remote for host/owner/repo, and that remote. */
   private async pullRequestCheckout(
+    host: string,
     slug: string,
     repository: { id?: string; preferred?: string },
     deps: PullRequestDeps,
@@ -944,7 +960,9 @@ export class LocalReviewData {
       if (!vcs || !gitDir) continue;
 
       const remote = (await githubRemotes(gitDir, deps)).find(
-        (entry) => entry.slug.toLowerCase() === slug.toLowerCase(),
+        (entry) =>
+          entry.host === host &&
+          entry.slug.toLowerCase() === slug.toLowerCase(),
       );
 
       if (remote)
@@ -957,10 +975,12 @@ export class LocalReviewData {
         };
     }
 
+    const name = host === "github.com" ? slug : `${host}/${slug}`;
+
     throw new ReviewInputError(
       repository.id
-        ? `That checkout has no GitHub remote for ${slug}. Add one, or omit repositoryId.`
-        : `No registered checkout has a GitHub remote for ${slug}. Register a checkout of ${slug} with review_register_repository first, or pass a target.`,
+        ? `That checkout has no GitHub remote for ${name}. Add one, or omit repositoryId.`
+        : `No registered checkout has a GitHub remote for ${name}. Register a checkout of ${name} with review_register_repository first, or pass a target.`,
       404,
     );
   }

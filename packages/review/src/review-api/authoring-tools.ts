@@ -17,6 +17,19 @@ export function authoringTools(
   const review = { reviewId: id };
   const version = z.number().int().nonnegative().optional();
 
+  // Anthropic rejects a top-level union, so publish one object; the host validates the union.
+  const [image, trace, map] = uploadSchema.options;
+
+  const uploadInput = z
+    .strictObject({
+      ...image.shape,
+      ...trace.shape,
+      ...map.shape,
+      kind: z.enum(["image", "trace", "map"]),
+    })
+    .partial()
+    .required({ id: true, repositoryId: true, kind: true });
+
   const read = (name: keyof typeof readQuerySchemas) =>
     z.strictObject({ ...review, ...readQuerySchemas[name].shape });
 
@@ -31,7 +44,7 @@ export function authoringTools(
     repin:
       "Update source pins or PR identity while preserving the document and component IDs. Returns warnings for retained source ranges to verify and resources that no longer match; fix them with review_edit. Previous pins and content remain in history. Omitted pullRequestUrl preserves PR identity within the same repository; changing repositories clears it. Supply a URL to replace it or null to detach.",
     restore:
-      "Restore title, source pins, PR identity and content from a saved version. Comments are not rolled back.",
+      "Restore title, source pins, PR identity and content from a saved version.",
     attention:
       "Mark a review viewed, dismissed or restored without changing its content.",
     delete: "Permanently delete this review and its history.",
@@ -67,12 +80,12 @@ export function authoringTools(
     ),
     tool(
       "get_instructions",
-      'Read Review\'s guidance before creating or editing a Review. The default topic gives the authoring workflow; "file-lenses" covers Diff-view file lenses.' +
+      'Read Whiteboard\'s guidance before creating or editing a review. The default topic gives the authoring workflow; "file-lenses" covers Diff-view file lenses.' +
         (traceEnabled
           ? ' Call review_get_instructions({topic:"trace-archaeology"}) for why code exists, what an agent was thinking, or whether an agent solved this before.'
           : "") +
         (scratchpadAvailable
-          ? ' When the user asks in conversation to be shown how code works or wants a diagram, without asking for a Review, draw it on the Review scratchpad rather than answering only in chat: call review_get_instructions({topic:"scratchpad"}) first. A request for a Review or to use Review means authoring a Review with the default topic.'
+          ? ' When the user asks in conversation to be shown how code works or wants a diagram, without asking for a review, draw it on the scratchpad rather than answering only in chat: call review_get_instructions({topic:"scratchpad"}) first. A request for a review or to use Whiteboard means authoring a review with the default topic.'
           : ""),
       instructionsQuerySchema.partial(),
       "GET",
@@ -141,7 +154,7 @@ export function authoringTools(
     ),
     tool(
       "workspace_cleanup",
-      "Inspect failed cleanup of retired Review-owned checkouts. Supply workspaceId to retry removal of that checkout. This does not remove active review checkouts.",
+      "Inspect failed cleanup of retired review-owned checkouts. Supply workspaceId to retry removal of that checkout. This does not remove active review checkouts.",
       z.strictObject({ workspaceId: id.optional() }),
       "POST",
       "/workspace-cleanup",
@@ -162,8 +175,8 @@ export function authoringTools(
     ),
     tool(
       "upload",
-      "Retain an image, trace or software map for use in a review. Reusing an upload ID requires identical content; rejected uploads are not saved.",
-      uploadSchema,
+      'Retain an image, trace or software map for use in a review. kind:"image" takes base64; kind:"trace" takes trace; kind:"map" takes pins, side and model. Reusing an upload ID requires identical content; rejected uploads are not saved.',
+      uploadInput,
       "POST",
       "/resources",
     ),

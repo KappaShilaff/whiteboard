@@ -24,7 +24,7 @@ const TITLE = "Order review";
 
 /** Every message a broken pointer can produce; a probe that must reach the Desktop asserts their absence. */
 const POINTER_ERRORS =
-  /Review Desktop uses protocol|discovery is unreadable|is not running\./;
+  /Whiteboard Desktop uses protocol|discovery is unreadable|is not running\./;
 
 /** A Desktop-side answer: a probe that must stop at the pointer may never produce one. */
 const LOOKUP_ERROR = /Not found\./;
@@ -122,7 +122,7 @@ export async function run(ctx) {
   const probe = async (contents) => {
     await writeFile(pointer, contents);
 
-    return ctx.cliRaw(["info", "--review", review.reviewId]);
+    return ctx.cliRaw(["info", "--session", review.reviewId]);
   };
 
   const output = (result) => `${result.stdout}${result.stderr}`;
@@ -142,12 +142,12 @@ export async function run(ctx) {
     );
     assert.match(
       result.stderr,
-      /Review Desktop uses protocol 999, but this Review CLI needs protocol 3\./,
+      /Whiteboard Desktop uses protocol 999, but this Whiteboard CLI needs protocol 3\./,
       `a protocol mismatch was not named: ${output(result)}`,
     );
     assert.match(
       result.stderr,
-      /Update Review and Review Desktop to compatible versions, then try again\./,
+      /Update the Whiteboard CLI and Whiteboard Desktop to compatible versions, then try again\./,
       `a protocol mismatch named no fix: ${output(result)}`,
     );
     // Stopping before the Desktop is the point: no talking to an unreadable protocol, and no second launch.
@@ -167,12 +167,12 @@ export async function run(ctx) {
     );
     assert.match(
       result.stderr,
-      /Review Desktop discovery is unreadable at .*review-desktop\/instances\/.*\.json\./,
+      /Whiteboard Desktop discovery is unreadable at .*review-desktop\/instances\/.*\.json\./,
       `a malformed pointer was not named: ${output(result)}`,
     );
     assert.match(
       result.stderr,
-      /Restart Review Desktop and try again\./,
+      /Restart Whiteboard Desktop and try again\./,
       `a malformed pointer named no fix: ${output(result)}`,
     );
     assert.doesNotMatch(
@@ -230,7 +230,7 @@ export async function run(ctx) {
     assert.equal(result.code, 0, `app launch: ${output(result)}`);
     assert.match(
       result.stdout,
-      /Review Desktop is already running\./,
+      /Whiteboard Desktop is already running\./,
       `app launch did not recognise the attached Desktop: ${output(result)}`,
     );
     // The instance record is written once on listen, so the same instanceId proves the attached Desktop answered.
@@ -270,7 +270,7 @@ export async function run(ctx) {
   const stray = async () => [...(await installedDesktopPids(probeHome))];
 
   const picked = await ctx.cliRaw(
-    ["app", "pick", "--review", review.reviewId],
+    ["app", "pick", "--session", review.reviewId],
     ctx.repo,
     {
       timeout: 25000,
@@ -319,7 +319,7 @@ export async function run(ctx) {
   );
   assert.match(
     picked.stderr,
-    /Review Desktop uses protocol 999, but this Review CLI needs protocol 3\./,
+    /Whiteboard Desktop uses protocol 999, but this Whiteboard CLI needs protocol 3\./,
     `app pick did not name the protocol mismatch: ${output(picked)}`,
   );
   assert.deepEqual(

@@ -29,7 +29,10 @@ type ReviewCliInstallStatus,
 type ReviewTutorialOpenResponse,
 type ReviewVerbResponse
 } from "../common/reviewProtocol.js";
-import { reconnectUntilAborted } from "../common/reviewReconnect.js";
+import {
+	REVIEW_SERVER_STARTUP_TIMEOUT_MS,
+	reconnectUntilAborted,
+} from "../common/reviewReconnect.js";
 
 const REVIEW_TUTORIAL_AUTOPREPARE_SUPPRESSED_KEY = "review.tutorial.autoPrepareSuppressed.v1";
 
@@ -151,11 +154,6 @@ export class ReviewDesktopConnectionService extends Disposable implements IRevie
 		return { serverUrl: this.serverUrl, token, appSessionId };
 	}
 
-	/**
-	 * The dismissed review retention window. It is a server preference rather
-	 * than a workbench setting because the reaper runs inside the review server.
-	 * `null` means never reap.
-	 */
 	async readDiffrConfig(): Promise<ReviewDiffrConfig> {
 		await this.initialize();
 		const response = await fetch(`${this.serverUrl}/diffr-config`, {
@@ -458,7 +456,7 @@ export class ReviewDesktopConnectionService extends Disposable implements IRevie
 	}
 
 	private async waitForHealth(): Promise<void> {
-		const deadline = Date.now() + 10_000;
+		const deadline = Date.now() + REVIEW_SERVER_STARTUP_TIMEOUT_MS;
 		while (Date.now() < deadline) {
 			try {
 				const response = await fetch(`${this.serverUrl}/health`, {

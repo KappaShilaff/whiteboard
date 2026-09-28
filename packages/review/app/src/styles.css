@@ -113,7 +113,6 @@
   --review-home-rule: #262c37;
   --review-home-rule-soft: #39404d;
   --review-home-meta: #9199a8;
-  --review-home-comment: #5b7cff;
   --review-home-submitted: #c8a4f5;
   --review-home-view-toggle-bg: #1a1f29;
   --review-home-view-toggle-active-border: #39404d;
@@ -798,7 +797,8 @@ button {
 .review-home-scroll {
   flex: 1 1 auto;
   min-height: 0;
-  padding: 36px clamp(36px, calc(12.5cqw - 60px), 120px) 56px;
+  padding: 36px clamp(36px, calc(12.5cqw - 60px), 120px)
+    max(56px, var(--review-bottom-scroll-padding, 0px));
   overflow: auto;
   scrollbar-gutter: stable;
 }
@@ -1777,7 +1777,7 @@ button {
 
 @container review-canvas (max-width: 660px) {
   .review-home-scroll {
-    padding: 32px 24px 56px;
+    padding: 32px 24px max(56px, var(--review-bottom-scroll-padding, 0px));
   }
 
   .review-home-page-header {
@@ -1895,7 +1895,6 @@ button {
   --review-home-rule: var(--rule);
   --review-home-rule-soft: var(--rule-soft);
   --review-home-meta: #5d6472;
-  --review-home-comment: var(--accent);
   --review-home-submitted: #6d43b3;
   --review-home-view-toggle-bg: #e9ebef;
   --review-home-view-toggle-active-border: #d8dbe1;
@@ -2142,7 +2141,7 @@ button {
 
 .review-topbar-context {
   display: flex;
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   min-width: 0;
   align-items: center;
   margin-right: auto;
@@ -2241,6 +2240,7 @@ button {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
+  gap: 4px;
   height: var(--chrome-control-height);
   padding: 0 10px;
   border: 0;
@@ -2261,6 +2261,18 @@ button {
 .review-open-source-tree:focus-visible {
   outline: 2px solid var(--chrome-fg);
   outline-offset: -1px;
+}
+
+@container review-content (max-width: 720px) {
+  .review-open-source-tree-label {
+    display: none;
+  }
+
+  .review-open-source-tree {
+    width: var(--chrome-control-height);
+    justify-content: center;
+    padding: 0;
+  }
 }
 
 .review-view-region {
@@ -2759,23 +2771,8 @@ button {
   white-space: nowrap;
 }
 
-.review-baton-chip--changes-requested {
-  color: var(--diff-modified);
-}
-
-.review-baton-chip--approved {
-  color: var(--diff-added);
-}
-
 .review-baton-chip--dismissed {
   color: var(--diff-removed);
-}
-
-.review-baton-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: currentColor;
 }
 
 .review-baton-glyph {
@@ -3104,6 +3101,7 @@ button {
 }
 
 .review-panel-body {
+  padding-bottom: var(--review-bottom-scroll-padding, 0px);
   flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
@@ -3395,9 +3393,37 @@ button {
   display: inline;
 }
 
-.agent-markdown li > input[type="checkbox"] {
-  margin: 0 6px 0 -1.35em;
-  vertical-align: -2px;
+/* The checkbox replaces the bullet, beside the item's first line. */
+.markdown-task {
+  display: flex;
+  gap: 0.5em;
+  list-style: none;
+}
+
+/* Centered on the first line of text. */
+.markdown-task > input {
+  flex: none;
+  width: 1em;
+  height: 1em;
+  margin: calc((1lh - 1em) / 2) 0 0;
+  font: inherit;
+  line-height: inherit;
+}
+
+.markdown-task > input:enabled {
+  cursor: pointer;
+}
+
+.markdown-task > div {
+  min-width: 0;
+}
+
+.markdown-task > div > p:first-child {
+  margin-top: 0;
+}
+
+.markdown-task > div > p:last-child {
+  margin-bottom: 0;
 }
 
 .agent-markdown a,
@@ -4183,7 +4209,11 @@ button {
   scrollbar-width: thin;
   /* --review-toc-tail is the room the contents rail adds so the last heading
      can scroll up to the top edge, measured by the rail itself. */
-  padding: var(--review-page-top) 52px calc(120px + var(--review-toc-tail, 0px));
+  padding: var(--review-page-top) 52px
+    calc(
+      max(120px, var(--review-bottom-scroll-padding, 0px)) +
+        var(--review-toc-tail, 0px)
+    );
 }
 
 .review-view-region--review::-webkit-scrollbar {
@@ -5632,10 +5662,10 @@ button.review-stack-row:disabled .review-stack-relation {
 }
 
 .sequence-diagram {
-  /* Natural height (header + canvas, no hardcoded header allowance), capped
-     to the viewport; past the cap the body scrolls vertically. */
+  /* Natural height; the document scrolls, not the diagram. The body scrolls
+     vertically only past about forty steps. */
   height: auto;
-  max-height: calc(100dvh - 160px);
+  max-height: 3200px;
 }
 
 .sequence-diagram.sequence-tour--active {
@@ -6505,8 +6535,7 @@ button.review-stack-row:disabled .review-stack-relation {
   box-shadow: 0 12px 32px var(--shadow-color-strong);
 }
 
-/* Dismissed reviews sit below the active list, collapsed. Each row states its
-   own deadline so a reap never surprises. */
+/* Dismissed reviews sit below the active list, collapsed. */
 .review-home-dismissed {
   display: flex;
   flex-direction: column;
@@ -8029,4 +8058,11 @@ button.review-stack-row:disabled .review-stack-relation {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.canvas-error {
+  max-width: 72ch;
+  margin: 32px auto;
+  padding: 0 24px;
+  font: 15px/1.6 var(--font-display);
 }
