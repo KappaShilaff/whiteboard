@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE in the repository root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CancellationError, ErrorNoTelemetry, PendingMigrationError } from "../../base/common/errors.js";
+import { CancellationError, ErrorNoTelemetry } from "../../base/common/errors.js";
 import { FileOperationError } from "../../platform/files/common/files.js";
 
 /**
@@ -54,7 +54,6 @@ export function packReviewError(error: unknown): ReviewErrorReport | undefined {
 		ErrorNoTelemetry.isErrorNoTelemetry(candidate as Error)
 		|| candidate instanceof CancellationError
 		|| candidate instanceof FileOperationError
-		|| PendingMigrationError.is(candidate)
 		|| (typeof candidate.message === 'string' && candidate.message.includes('Unable to read file'))
 	) {
 		return undefined;

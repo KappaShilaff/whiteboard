@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { CancellationError, ErrorNoTelemetry, PendingMigrationError } from "../../base/common/errors.js";
+import { CancellationError, ErrorNoTelemetry } from "../../base/common/errors.js";
 import { FileOperationError, FileOperationResult } from "../../platform/files/common/files.js";
 import {
 	packReviewError,
@@ -43,9 +43,6 @@ test("packReviewError skips errors that say nothing about a defect", () => {
 	const fileError = new FileOperationError("Unable to write file", FileOperationResult.FILE_PERMISSION_DENIED);
 	fileError.stack = "Error: Unable to write file\n    at f (/app/out/vs/platform/files/common/fileService.js:1:1)";
 	assert.equal(packReviewError(fileError), undefined);
-	const migration = new PendingMigrationError("pending");
-	migration.stack = "PendingMigrationError: pending\n    at f (/app/out/vs/base/common/errors.js:1:1)";
-	assert.equal(packReviewError(migration), undefined);
 });
 
 test("packReviewError skips a file read error rewrapped in a plain Error", () => {
