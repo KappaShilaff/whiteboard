@@ -3,7 +3,8 @@
  *  Licensed under the MIT License. See LICENSE in the repository root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CancellationError, ErrorNoTelemetry } from "../../base/common/errors.js";
+import { CancellationError, ErrorNoTelemetry, PendingMigrationError } from "../../base/common/errors.js";
+import { FileOperationError } from "../../platform/files/common/files.js";
 
 /**
  * Shared error reporting rules for the Review workbench and the Review part of
@@ -28,9 +29,14 @@ export interface ReviewErrorReport {
 
 /**
  * Unwrap a loader error, then decide whether it is worth reporting. Errors with
- * a system `code`, cancellations, errors marked as never-report, and errors
- * without a stack are all skipped: none of them says anything about a defect in
- * Review.
+ * a system `code`, cancellations, errors marked as never-report, file read and
+ * file operation errors, and errors without a stack are all skipped: none of
+ * them says anything about a defect in Review.
+ *
+ * File errors are skipped by message as well as by class because callers such
+ * as the theme service rewrap them in a plain `Error`. A read cancelled when a
+ * window closes or reloads arrives as "Unable to load <theme>: Unable to read
+ * file '<theme>' (Canceled: Canceled)".
  */
 export function packReviewError(error: unknown): ReviewErrorReport | undefined {
 	if (!error || typeof error !== 'object') {
@@ -44,7 +50,13 @@ export function packReviewError(error: unknown): ReviewErrorReport | undefined {
 	if (candidate.detail && (candidate.detail as { stack?: unknown }).stack) {
 		candidate = candidate.detail as typeof candidate;
 	}
-	if (ErrorNoTelemetry.isErrorNoTelemetry(candidate as Error) || candidate instanceof CancellationError) {
+	if (
+		ErrorNoTelemetry.isErrorNoTelemetry(candidate as Error)
+		|| candidate instanceof CancellationError
+		|| candidate instanceof FileOperationError
+		|| PendingMigrationError.is(candidate)
+		|| (typeof candidate.message === 'string' && candidate.message.includes('Unable to read file'))
+	) {
 		return undefined;
 	}
 	// Array stacks come from workerServer.ts; upstream works around this too.

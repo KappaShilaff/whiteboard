@@ -6,7 +6,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { CancellationError, ErrorNoTelemetry } from "../../base/common/errors.js";
+import { CancellationError, ErrorNoTelemetry, PendingMigrationError } from "../../base/common/errors.js";
+import { FileOperationError, FileOperationResult } from "../../platform/files/common/files.js";
 import {
 	packReviewError,
 	ReviewErrorReportLimiter,
@@ -39,6 +40,17 @@ test("packReviewError skips errors that say nothing about a defect", () => {
 	const cancelled = new CancellationError();
 	cancelled.stack = "Canceled\n    at f (/app/out/vs/base/common/errors.js:1:1)";
 	assert.equal(packReviewError(cancelled), undefined);
+	const fileError = new FileOperationError("Unable to write file", FileOperationResult.FILE_PERMISSION_DENIED);
+	fileError.stack = "Error: Unable to write file\n    at f (/app/out/vs/platform/files/common/fileService.js:1:1)";
+	assert.equal(packReviewError(fileError), undefined);
+	const migration = new PendingMigrationError("pending");
+	migration.stack = "PendingMigrationError: pending\n    at f (/app/out/vs/base/common/errors.js:1:1)";
+	assert.equal(packReviewError(migration), undefined);
+});
+
+test("packReviewError skips a file read error rewrapped in a plain Error", () => {
+	const rewrapped = errorWithStack("Unable to load /app/theme.json: Unable to read file '/app/theme.json' (Canceled: Canceled)");
+	assert.equal(packReviewError(rewrapped), undefined);
 });
 
 test("packReviewError unwraps a loader error and an array stack", () => {

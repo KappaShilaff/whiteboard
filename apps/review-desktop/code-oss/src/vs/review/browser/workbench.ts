@@ -423,7 +423,6 @@ export class ReviewWorkbench extends Disposable implements IAgentWorkbenchLayout
 	private readonly errorReportLimiter = new ReviewErrorReportLimiter();
 	private workbenchInstantiationService: IInstantiationService | undefined;
 	private reviewTelemetryService: IReviewTelemetryService | undefined;
-	private lifecycleService: ILifecycleService | undefined;
 
 	/**
 	 * Send the error to the loopback Review server, which strips the message and
@@ -431,16 +430,8 @@ export class ReviewWorkbench extends Disposable implements IAgentWorkbenchLayout
 	 * machine. Errors raised before `startup()` have no service to report
 	 * through and are dropped rather than buffered: buffering would hold raw
 	 * messages before the telemetry setting can be read.
-	 *
-	 * Errors raised once the window is closing, reloading or quitting are dropped
-	 * too. Shutdown disposes the main-process IPC client, which cancels every
-	 * read still in flight, and callers such as the theme service rewrap that
-	 * cancellation as a plain error that no cancellation filter recognizes.
 	 */
 	private reportUnexpectedError(error: unknown): void {
-		if (this.lifecycleService?.willShutdown) {
-			return;
-		}
 		this.errorReportLimiter.report(error, report => {
 			this.reviewTelemetryService ??= this.workbenchInstantiationService?.invokeFunction(accessor => accessor.get(IReviewTelemetryService));
 			this.reviewTelemetryService?.capture('client_error', {
@@ -483,7 +474,6 @@ export class ReviewWorkbench extends Disposable implements IAgentWorkbenchLayout
 
 			instantiationService.invokeFunction(accessor => {
 				const lifecycleService = accessor.get(ILifecycleService);
-				this.lifecycleService = lifecycleService;
 				const storageService = accessor.get(IStorageService);
 				const configurationService = accessor.get(IConfigurationService);
 				const hostService = accessor.get(IHostService);
