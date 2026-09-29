@@ -131,7 +131,12 @@ export function createGlobalReviewServer(
       : [reviewInstanceDiscoveryPath(identity.key)];
 
   const telemetry = input.telemetry ?? ReviewTelemetry.fromEnv();
-  const relay = input.relay ?? new GlobalReviewDesktopVerbRelay();
+
+  // Each window attaches its own stream; one at a time keeps a verb from
+  // opening in every window, and the next takes over when it goes.
+  const relay =
+    input.relay ?? new GlobalReviewDesktopVerbRelay({ maxClients: 1 });
+
   const reviewStore = input.reviewStore;
 
   const reviewLocks = new Map<string, Promise<void>>();
