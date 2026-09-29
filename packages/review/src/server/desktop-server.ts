@@ -188,6 +188,7 @@ export function createGlobalReviewServer(
   const app = createReviewServerApp({
     token,
     instanceId,
+    serverId: input.reviewStore.serverId(),
     relay,
     health: () => ({}),
   });
@@ -499,7 +500,6 @@ export function createGlobalReviewServer(
 
     return serverJson(200, { ok: true });
   });
-  app.notFound(() => serverJson(404, { ok: false, error: "Not found." }));
 
   const httpServer = createServer(createNodeRequestListener(app));
 
