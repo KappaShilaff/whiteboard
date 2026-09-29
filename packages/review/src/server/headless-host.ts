@@ -2,7 +2,6 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { once } from "node:events";
 import { mkdir, realpath, rm } from "node:fs/promises";
 import { createServer } from "node:http";
-import path from "node:path";
 
 import { isObjectValue } from "@dev.fast/json";
 import {
@@ -14,6 +13,7 @@ import { createReviewApi } from "@review/review-api/http.js";
 import { openReviewProfile } from "@review/review-api/profile.js";
 import {
   type ReviewServerDiscovery,
+  headlessServerLockPath,
   reviewServerDiscoveryPath,
 } from "@review/server-discovery.js";
 import { mountSharingPublisher } from "@review/sharing/host.js";
@@ -34,6 +34,7 @@ interface HeadlessServerInput {
   stateDir: string;
   port?: number;
   softwareMapEnabled?: boolean;
+  startedBy?: ReviewServerDiscovery["startedBy"];
   signal: AbortSignal;
   /** The CLI's instance, already on the `headless` surface. */
   telemetry?: Pick<ReviewTelemetryCapture, "captureUiEvent">;
@@ -49,7 +50,7 @@ export async function runHeadlessServer(input: HeadlessServerInput) {
     input.telemetry && installProcessErrorTelemetry(input.telemetry);
 
   const outcome = await withFileLock(
-    path.join(stateDir, "headless-server.lock"),
+    headlessServerLockPath(stateDir),
     {
       timeoutMs: 0,
       retryMs: 20,
@@ -81,6 +82,7 @@ async function serve(input: HeadlessServerInput) {
     url: "http://127.0.0.1:0",
     serverPid: process.pid,
     token: randomBytes(32).toString("base64url"),
+    startedBy: input.startedBy ?? "user",
   };
 
   const relay = new GlobalReviewDesktopVerbRelay();

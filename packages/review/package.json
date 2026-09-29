@@ -64,6 +64,7 @@
     "whiteboard": "tsx src/cli.ts"
   },
   "dependencies": {
+    "@dev.fast/diffr": "0.1.7",
     "@hono/node-server": "2.0.12",
     "@modelcontextprotocol/sdk": "1.30.0",
     "commander": "14.0.3",
@@ -80,7 +81,6 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@dev.fast/diffr": "0.1.7",
     "@dev.fast/json": "workspace:*",
     "@dev.fast/local-vcs": "^0.1.0",
     "@dev.fast/review-protocol": "workspace:*",
