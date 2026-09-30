@@ -1,5 +1,7 @@
 import type { JsonObject } from "@dev.fast/json";
 
+import type { ReviewGatewayHostState } from "./contracts.js";
+
 /** List metadata for the authenticated local catalog; document contents stay in snapshots. */
 export interface ReviewApiSummary {
   reviewId: string;
@@ -45,13 +47,9 @@ export interface ReviewApiSummary {
   dismissedAt: string | null;
   /** The SSH alias of the machine that holds the review; absent on the laptop. */
   host?: string;
-  /** Set with `host`; a review server never writes these three. */
-  hostState?:
-    | "online"
-    | "connecting"
-    | "offline"
-    | "incompatible"
-    | "duplicate";
+  /** Set with `host`; a review server never writes these three. A
+   * duplicate alias lists nothing, so its state never appears here. */
+  hostState?: Exclude<ReviewGatewayHostState["state"], "duplicate">;
   /** Absent on the laptop, where everything is available. */
   available?: { sourceWindows: boolean; languageFeatures: boolean };
 }
