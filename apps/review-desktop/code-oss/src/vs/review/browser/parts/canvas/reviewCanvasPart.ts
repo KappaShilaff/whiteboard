@@ -98,6 +98,7 @@ import "../../media/review.css";
 import { ReviewSessionTelemetry } from "../../reviewSessionTelemetry.js";
 import { applyReviewThemeChoice, currentReviewThemeChoice } from "../../reviewThemeChoice.js";
 import { ReviewCanvasEditorInput } from "./reviewCanvasEditorInput.js";
+import { reviewRemoteHostsSettings } from "../../reviewRemoteHostsSettings.js";
 
 interface ReviewCanvasAssetsModule extends ReviewCanvasModule {
 	readonly clearReviewViewState: (config: ReviewRuntimeConfig) => void;
@@ -827,6 +828,11 @@ export class ReviewCanvasEditorPane extends EditorPane {
 				);
 				return this.currentStructuralDiffEnabled();
 			},
+			remoteHosts: reviewRemoteHostsSettings({
+				get: (key) => this.configurationService.getValue(key),
+				update: (key, value) => this.configurationService.updateValue(key, value, ConfigurationTarget.APPLICATION),
+				connection: this.desktopConnection,
+			}),
 			reloadWindow: async () => { await this.commandService.executeCommand("workbench.action.reloadWindow"); },
 			diffrConfig: {
 				saveSummarizer: (input) => this.desktopConnection.saveDiffrSummarizer(input),

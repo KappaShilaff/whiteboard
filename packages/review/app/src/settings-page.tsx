@@ -12,6 +12,7 @@ import { ConnectCard, LegacySkillsRow } from "./connect-card";
 import { controlStyles } from "./controls-styles";
 import { DiffrConfigSection } from "./diffr-config-section";
 import { homeStyles } from "./home-styles";
+import { RemoteHostsSection } from "./remote-hosts-section";
 import { settingsStyles as styles } from "./settings-styles";
 import { withClass } from "./stylex-props";
 import { TraceCaptureSection } from "./trace-capture-section";
@@ -246,6 +247,10 @@ export function SettingsPage({
               </button>
             </Row>
           </Section>
+
+          {settings.remoteHosts.enabled ? (
+            <RemoteHostsSection hosts={settings.remoteHosts} />
+          ) : null}
 
           <Section label="Experimental Features">
             <Row
