@@ -514,6 +514,10 @@ export interface ReviewCanvasSettingsContent {
   setKeymap(choice: ReviewKeymapChoice): Promise<ReviewKeymapChoice>;
   ctrlTab: ReviewCtrlTabChoice;
   setCtrlTab(choice: ReviewCtrlTabChoice): Promise<ReviewCtrlTabChoice>;
+  // Backed by `review.codePeeks.scrollWithWheel`. On, the wheel scrolls a
+  // scrollable code peek under the pointer and stops at its edges.
+  codePeekWheelScroll: boolean;
+  setCodePeekWheelScroll(enabled: boolean): Promise<boolean>;
   readyNotification: ReviewReadyNotificationChoice;
   setReadyNotification(
     choice: ReviewReadyNotificationChoice,
@@ -641,6 +645,7 @@ export type ReviewCanvasContent =
       setTutorial?(enabled: boolean): void;
       structuralDiffEnabled?: boolean;
       softwareMapEnabled?: boolean;
+      codePeekWheelScroll?: boolean;
       reviewId: string;
       version?: number;
       bridge: ReviewCanvasBridge;

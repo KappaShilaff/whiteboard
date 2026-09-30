@@ -65,6 +65,10 @@ export function SettingsPage({
   const [keymap, setKeymap] = useState(settings.keymap);
   const [ctrlTab, setCtrlTab] = useState(settings.ctrlTab);
 
+  const [codePeekWheelScroll, setCodePeekWheelScroll] = useState(
+    settings.codePeekWheelScroll,
+  );
+
   const [readyNotification, setReadyNotification] = useState(
     settings.readyNotification,
   );
@@ -205,6 +209,31 @@ export function SettingsPage({
                   void run("theme", () => settings.setTheme(choice), setTheme)
                 }
               />
+            </Row>
+            <Row
+              label="Scroll code peeks with the wheel"
+              description="While the pointer is over a code peek, the wheel scrolls the peek and stops at its top and bottom. A peek that fits leaves the wheel to the document."
+            >
+              <label
+                {...stylex.props(styles.toggle)}
+                aria-label="Scroll code peeks with the wheel"
+              >
+                <input
+                  {...stylex.props(styles.checkbox)}
+                  type="checkbox"
+                  checked={codePeekWheelScroll}
+                  disabled={busy !== null}
+                  onChange={(event) => {
+                    const enabled = event.target.checked;
+
+                    void run(
+                      "code-peek-wheel-scroll",
+                      () => settings.setCodePeekWheelScroll(enabled),
+                      setCodePeekWheelScroll,
+                    );
+                  }}
+                />
+              </label>
             </Row>
             <Row
               label="Keymap"

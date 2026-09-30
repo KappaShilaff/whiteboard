@@ -20,7 +20,7 @@
 import { localize } from '../../nls.js';
 import { Registry } from '../../platform/registry/common/platform.js';
 import { ConfigurationScope, Extensions, type IConfigurationRegistry } from '../../platform/configuration/common/configurationRegistry.js';
-import { REVIEW_CTRL_TAB_CHOICES, REVIEW_CTRL_TAB_SETTING, REVIEW_KEYMAPS, REVIEW_KEYMAP_SETTING, REVIEW_READY_NOTIFICATION_CHOICES, REVIEW_READY_NOTIFICATION_SETTING, REVIEW_SOFTWARE_MAP_SETTING, REVIEW_STRUCTURAL_DIFF_SETTING, REVIEW_TELEMETRY_SETTING, curatedExtensionConfigurationDefaults, reviewConfigurationDefaults } from './reviewConfigurationDefaults.js';
+import { REVIEW_CODE_PEEK_WHEEL_SETTING, REVIEW_CTRL_TAB_CHOICES, REVIEW_CTRL_TAB_SETTING, REVIEW_KEYMAPS, REVIEW_KEYMAP_SETTING, REVIEW_READY_NOTIFICATION_CHOICES, REVIEW_READY_NOTIFICATION_SETTING, REVIEW_SOFTWARE_MAP_SETTING, REVIEW_STRUCTURAL_DIFF_SETTING, REVIEW_TELEMETRY_SETTING, curatedExtensionConfigurationDefaults, reviewConfigurationDefaults } from './reviewConfigurationDefaults.js';
 
 const configurationRegistry = Registry.as<IConfigurationRegistry>(Extensions.Configuration);
 
@@ -45,6 +45,11 @@ configurationRegistry.registerConfiguration({
 			],
 			default: 'recent',
 			description: localize('review.tabs.ctrlTab', "What Ctrl+Tab does."),
+		},
+		[REVIEW_CODE_PEEK_WHEEL_SETTING]: {
+			type: 'boolean',
+			default: false,
+			description: localize('review.codePeeks.scrollWithWheel', "Scroll a code peek with the mouse wheel while the pointer is over it, stopping at the peek's top and bottom. A peek that fits, and every peek when this is off, leaves the wheel to the document."),
 		},
 		[REVIEW_READY_NOTIFICATION_SETTING]: {
 			type: 'string',

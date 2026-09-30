@@ -7,7 +7,11 @@ let dispose: (() => void) | undefined;
 
 afterEach(() => dispose?.());
 
-function mount(embedClass: string, inDocument = true) {
+function mount(
+  embedClass: string,
+  inDocument = true,
+  codePeekWheelScroll = false,
+) {
   const region = document.createElement("section");
   region.style.cssText =
     "width:300px;height:200px;overflow:auto;line-height:20px";
@@ -17,7 +21,9 @@ function mount(embedClass: string, inDocument = true) {
     </div>
   </article>`;
   document.body.append(region);
-  dispose = routeDocumentEmbedScroll(region);
+  dispose = routeDocumentEmbedScroll(region, {
+    codePeekWheelScroll: () => codePeekWheelScroll,
+  });
   const embed = region.querySelector<HTMLElement>(`.${embedClass}`)!;
   const content = embed.firstElementChild!;
 
@@ -196,4 +202,117 @@ it("continues scrolling the document when the embed fits and removes the handler
   content.dispatchEvent(wheel);
   expect(wheel.defaultPrevented).toBe(false);
   expect(region.scrollTop).toBe(80);
+});
+
+it("lets a code peek scroll itself while it has room when the setting is on", () => {
+  const { region, embed, content } = mount("code-peek", true, true);
+  const embeddedWheel = vi.fn<(event: WheelEvent) => void>();
+  embed.addEventListener("wheel", embeddedWheel);
+  embed.scrollTop = 50;
+
+  for (const deltaY of [120, -80]) {
+    const wheel = new WheelEvent("wheel", {
+      bubbles: true,
+      cancelable: true,
+      deltaY,
+    });
+
+    content.dispatchEvent(wheel);
+
+    expect(wheel.defaultPrevented).toBe(false);
+  }
+
+  expect(embeddedWheel).toHaveBeenCalledTimes(2);
+  expect(region.scrollTop).toBe(0);
+});
+
+it("stops the wheel at a code peek's edge instead of scrolling the document", () => {
+  const { region, embed, content } = mount("code-peek", true, true);
+  region.scrollTop = 300;
+  embed.scrollTop = embed.scrollHeight - embed.clientHeight;
+
+  const down = new WheelEvent("wheel", {
+    bubbles: true,
+    cancelable: true,
+    deltaY: 120,
+  });
+
+  content.dispatchEvent(down);
+
+  expect(down.defaultPrevented).toBe(true);
+  expect(region.scrollTop).toBe(300);
+
+  embed.scrollTop = 0;
+
+  const up = new WheelEvent("wheel", {
+    bubbles: true,
+    cancelable: true,
+    deltaY: -80,
+  });
+
+  content.dispatchEvent(up);
+
+  expect(up.defaultPrevented).toBe(true);
+  expect(region.scrollTop).toBe(300);
+});
+
+it("scrolls the document over a code peek that fits, with the setting on", () => {
+  const { region, content } = mount("code-peek", true, true);
+  (content as HTMLElement).style.height = "50px";
+  region.scrollTop = 300;
+
+  content.dispatchEvent(
+    new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY: 120 }),
+  );
+
+  expect(region.scrollTop).toBe(420);
+});
+
+it.each(["sequence-diagram", "flow-diagram", "database-lens"])(
+  "keeps scrolling the document over %s when the code peek setting is on",
+  (embedClass) => {
+    const { region, embed, content } = mount(embedClass, true, true);
+    region.scrollTop = 300;
+    embed.scrollTop = 50;
+
+    content.dispatchEvent(
+      new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY: 120 }),
+    );
+
+    expect(region.scrollTop).toBe(420);
+    expect(embed.scrollTop).toBe(50);
+  },
+);
+
+it("cancels the browser's own scroll for a gesture a Monaco peek let through", () => {
+  const region = document.createElement("section");
+  region.style.cssText = "width:300px;height:200px;overflow:auto";
+  region.innerHTML = `<article class="review-document" style="height:2000px">
+    <div class="code-peek">
+      <div class="monaco-scrollable-element" style="position:relative;height:100px">
+        <div class="scrollbar vertical" style="position:absolute;top:0;right:0;width:10px;height:100px">
+          <div class="slider" style="position:absolute;top:40px;height:20px;width:10px"></div>
+        </div>
+        <div class="line">code</div>
+      </div>
+    </div>
+  </article>`;
+  document.body.append(region);
+  dispose = routeDocumentEmbedScroll(region, {
+    codePeekWheelScroll: () => true,
+  });
+  const line = region.querySelector(".line")!;
+
+  // Monaco neither consumes nor stops this one, as happens mid-animation at an edge.
+  const wheel = new WheelEvent("wheel", {
+    bubbles: true,
+    cancelable: true,
+    deltaY: 120,
+  });
+
+  line.dispatchEvent(wheel);
+
+  expect(wheel.defaultPrevented).toBe(true);
+  expect(region.scrollTop).toBe(0);
+  region.remove();
 });

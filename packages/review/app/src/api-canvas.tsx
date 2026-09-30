@@ -35,6 +35,7 @@ import {
 import { SaveMarkdown } from "./blocks";
 import { CanvasQueryProvider } from "./canvas-query";
 import { DisplayedReviewVersionContext } from "./displayed-review-version-context";
+import { CodePeekWheelScrollContext } from "./document-embed-scroll";
 import { DrawQueueProvider } from "./draw-queue-provider";
 import {
   ReviewSessionProvider,
@@ -439,15 +440,19 @@ export function ApiCanvas({
                           <MapEnabled.Provider
                             value={content.softwareMapEnabled === true}
                           >
-                            <SaveMarkdown.Provider value={saveMarkdown}>
-                              <CanvasDocument
-                                data={data}
-                                findHost={findHost}
-                                softwareMapEnabled={
-                                  content.softwareMapEnabled === true
-                                }
-                              />
-                            </SaveMarkdown.Provider>
+                            <CodePeekWheelScrollContext.Provider
+                              value={content.codePeekWheelScroll === true}
+                            >
+                              <SaveMarkdown.Provider value={saveMarkdown}>
+                                <CanvasDocument
+                                  data={data}
+                                  findHost={findHost}
+                                  softwareMapEnabled={
+                                    content.softwareMapEnabled === true
+                                  }
+                                />
+                              </SaveMarkdown.Provider>
+                            </CodePeekWheelScrollContext.Provider>
                           </MapEnabled.Provider>
                         </DisplayedReviewVersionContext.Provider>
                       </DrawQueueProvider>

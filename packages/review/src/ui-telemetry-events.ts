@@ -140,6 +140,7 @@ export const SETTING_NAME = [
   "theme",
   "ctrl_tab",
   "ready_notification",
+  "code_peek_wheel_scroll",
 ] as const;
 
 export const REVIEW_OPENED_VIA = ["home", "cli", "other"] as const;

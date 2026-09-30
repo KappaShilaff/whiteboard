@@ -43,6 +43,7 @@ import { IHostService } from "../../../../workbench/services/host/browser/host.j
 import { ILifecycleService } from "../../../../workbench/services/lifecycle/common/lifecycle.js";
 import { IWorkbenchLayoutService, Parts } from "../../../../workbench/services/layout/browser/layoutService.js";
 import {
+	REVIEW_CODE_PEEK_WHEEL_SETTING,
 	REVIEW_CTRL_TAB_SETTING,
 	REVIEW_KEYMAP_SETTING,
 	REVIEW_KEYMAPS,
@@ -250,7 +251,8 @@ export class ReviewCanvasEditorPane extends EditorPane {
 			configurationService.onDidChangeConfiguration((event) => {
 				if (
 					!event.affectsConfiguration(REVIEW_SOFTWARE_MAP_SETTING) &&
-					!event.affectsConfiguration(REVIEW_STRUCTURAL_DIFF_SETTING)
+					!event.affectsConfiguration(REVIEW_STRUCTURAL_DIFF_SETTING) &&
+					!event.affectsConfiguration(REVIEW_CODE_PEEK_WHEEL_SETTING)
 				)
 					return;
 				if (this.apiContent) {
@@ -258,6 +260,7 @@ export class ReviewCanvasEditorPane extends EditorPane {
 						...this.apiContent,
 						structuralDiffEnabled: this.currentStructuralDiffEnabled(),
 						softwareMapEnabled: this.currentSoftwareMapEnabled(),
+						codePeekWheelScroll: this.currentCodePeekWheelScroll(),
 					};
 					this.canvas.value?.update(this.apiContent);
 					return;
@@ -413,6 +416,7 @@ export class ReviewCanvasEditorPane extends EditorPane {
 						reviewId,
 						structuralDiffEnabled: this.currentStructuralDiffEnabled(),
 						softwareMapEnabled: this.currentSoftwareMapEnabled(),
+						codePeekWheelScroll: this.currentCodePeekWheelScroll(),
 						setTitle: (title) => input.setApiTitle(title),
 						setSourceView: (selection, next) => {
 							sourceSelection = selection;
@@ -792,6 +796,15 @@ export class ReviewCanvasEditorPane extends EditorPane {
 				await this.configurationService.updateValue(REVIEW_CTRL_TAB_SETTING, choice, ConfigurationTarget.USER);
 				return this.currentCtrlTab();
 			},
+			codePeekWheelScroll: this.currentCodePeekWheelScroll(),
+			setCodePeekWheelScroll: async (enabled) => {
+				this.reviewTelemetryService.capture("setting_changed", {
+					setting: "code_peek_wheel_scroll",
+					enabled,
+				});
+				await this.configurationService.updateValue(REVIEW_CODE_PEEK_WHEEL_SETTING, enabled, ConfigurationTarget.USER);
+				return this.currentCodePeekWheelScroll();
+			},
 			readyNotification: this.currentReadyNotification(),
 			setReadyNotification: async (choice) => {
 				this.reviewTelemetryService.capture("setting_changed", {
@@ -866,6 +879,10 @@ export class ReviewCanvasEditorPane extends EditorPane {
 				REVIEW_STRUCTURAL_DIFF_SETTING,
 			) === true
 		);
+	}
+
+	private currentCodePeekWheelScroll(): boolean {
+		return this.configurationService.getValue<boolean>(REVIEW_CODE_PEEK_WHEEL_SETTING) === true;
 	}
 
 	private currentSoftwareMapEnabled(): boolean {
