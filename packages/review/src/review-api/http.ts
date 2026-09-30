@@ -4,6 +4,7 @@ import type { JsonObject } from "@dev.fast/json";
 import {
   REVIEW_CLIENT_HEADER,
   REVIEW_CLIENT_REMOTE,
+  type ReviewStreamLine,
   type ReviewStructuralDiffEvent,
 } from "@dev.fast/review-protocol";
 import { errorMessage } from "@dev.fast/trace-core";
@@ -459,7 +460,7 @@ export function createReviewApi(
     const dirtyReviews = new Set(reviewIds);
     const sentLists = new Map<string, string>();
 
-    const readReviewLine = (reviewId: string) => {
+    const readReviewLine = (reviewId: string): ReviewStreamLine<Snapshot> => {
       try {
         return {
           kind: "review",
@@ -490,7 +491,7 @@ export function createReviewApi(
           kind: "list",
           mode,
           reviews: catalog(mode),
-        });
+        } satisfies ReviewStreamLine);
 
         // Catalog notices often change nothing this list shows.
         if (sentLists.get(mode) !== line) pending.push(line);
