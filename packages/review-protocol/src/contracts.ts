@@ -263,6 +263,8 @@ export interface ReviewDiffViewSpec {
   onToggleSection?: (id: string) => void;
   lens?: ReviewDiffLens;
   scope?: ReviewCommitScope;
+  /** False hides each file's "Open file". */
+  openFile?: boolean;
 }
 
 export interface ReviewDiffViewHandle extends ReviewDisposable {
@@ -644,6 +646,9 @@ export type ReviewCanvasContent =
       softwareMapEnabled?: boolean;
       reviewId: string;
       version?: number;
+      // From the review's list entry; absent on the laptop.
+      host?: string;
+      available?: ReviewApiSummary["available"];
       bridge: ReviewCanvasBridge;
       setTitle?(title: string): void;
       setSourceView?(

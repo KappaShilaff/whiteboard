@@ -52,6 +52,7 @@ import {
 } from "../../../common/reviewConfigurationDefaults.js";
 import { resolveReviewSourceView, reviewSourceAnchor, type ReviewSourceView, type ReviewSourceSelection } from "../../../common/reviewProtocol.js";
 import type {
+	ReviewApiSummary,
 	ReviewCanvasBridge,
 	ReviewCanvasContent,
 	ReviewCanvasDiagnostic,
@@ -122,6 +123,10 @@ const reviewCanvasPolicy = createTrustedTypesPolicy("reviewCanvas", {
 });
 
 const requestReviewApi: typeof fetch = (url, init) => fetch(url, init);
+
+/** What a review's canvas learns from its list entry: the host is a label, and what it cannot open. */
+const remoteEntry = (review: ReviewApiSummary | undefined) =>
+	review?.host ? { host: review.host, available: review.available } : {};
 
 function isTutorialStepId(step: unknown): step is TutorialStepId {
 	return typeof step === "string" && REVIEW_TUTORIAL_STEP_IDS.includes(step as TutorialStepId);
@@ -409,6 +414,7 @@ export class ReviewCanvasEditorPane extends EditorPane {
 						},
 						kind: "api",
 						reviewId,
+						...remoteEntry(this.apiCatalog.reviews.find((review) => review.reviewId === reviewId)),
 						structuralDiffEnabled: this.currentStructuralDiffEnabled(),
 						softwareMapEnabled: this.currentSoftwareMapEnabled(),
 						setTitle: (title) => input.setApiTitle(title),
