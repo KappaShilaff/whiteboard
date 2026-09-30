@@ -800,7 +800,9 @@ export interface ReviewServerHealth {
 export const ReviewGatewayHostSchema = z.strictObject({
   alias: requiredString,
   // url is http://127.0.0.1:<forwarded port>
-  endpoint: z.strictObject({ url: requiredString, token: requiredString }).optional(),
+  endpoint: z
+    .strictObject({ url: requiredString, token: requiredString })
+    .optional(),
   problem: z
     .strictObject({
       state: z.enum(["unreachable", "not-installed", "auth-failed"]),
