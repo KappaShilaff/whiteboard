@@ -194,7 +194,11 @@ export {
   traceMachineStatus,
 } from "./trace-machine-setup";
 
-export { processIsAlive, withFileLock } from "./with-file-lock";
+export {
+  processIsAlive,
+  processStartIdentity,
+  withFileLock,
+} from "./with-file-lock";
 
 export {
   writeFileAtomic,
