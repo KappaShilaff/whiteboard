@@ -3,6 +3,7 @@ import {
   type ReviewStackLayer,
   summarizeReviewDiffFiles,
 } from "@dev.fast/review-protocol";
+import { PULL_REQUEST_URL } from "@review/review-api/origin";
 import * as stylex from "@stylexjs/stylex";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -185,7 +186,9 @@ export function ReviewDocumentMetaLine({
             </span>
           ) : null}
           {meta.pullRequestNumber != null &&
-            (meta.pullRequestUrl ? (
+            // A snapshot can come from another machine: link only a PR URL.
+            (meta.pullRequestUrl &&
+            PULL_REQUEST_URL.test(meta.pullRequestUrl) ? (
               <a
                 href={meta.pullRequestUrl}
                 target="_blank"
