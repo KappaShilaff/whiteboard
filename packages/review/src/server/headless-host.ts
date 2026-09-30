@@ -28,6 +28,7 @@ import {
   createReviewServerApp,
   relayReviewCallbacks,
 } from "./review-server-core.js";
+import { useFetchedDiffr } from "./structural-diff.js";
 import type { ReviewTelemetryCapture } from "./ui-telemetry.js";
 
 interface HeadlessServerInput {
@@ -45,6 +46,7 @@ interface HeadlessServerInput {
 export async function runHeadlessServer(input: HeadlessServerInput) {
   await mkdir(input.stateDir, { recursive: true, mode: 0o700 });
   const stateDir = await realpath(input.stateDir);
+  useFetchedDiffr(stateDir);
 
   const stopErrorTelemetry =
     input.telemetry && installProcessErrorTelemetry(input.telemetry);
@@ -57,6 +59,8 @@ export async function runHeadlessServer(input: HeadlessServerInput) {
       // A paused live owner must never lose exclusive access to its store.
       staleMs: Infinity,
       unownedGraceMs: 1_000,
+      // A reboot or kill can hand the pid to an unrelated live process.
+      identifyOwner: true,
     },
     () => serve({ ...input, stateDir }),
   ).finally(() => stopErrorTelemetry?.());
