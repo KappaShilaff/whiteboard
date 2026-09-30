@@ -285,6 +285,7 @@ export function createGatewayHosts(input: {
     const timer = setTimeout(() => abort.abort(), HEALTH_TIMEOUT_MS);
     let health: z.infer<typeof healthSchema> | undefined;
     let reason = "it did not answer";
+    let code: string | undefined;
 
     try {
       const response = await send(host, {
@@ -300,8 +301,10 @@ export function createGatewayHosts(input: {
       if (parsed.success) health = parsed.data;
       else reason = "it did not answer as a Whiteboard server";
     } catch (error) {
-      if (!abort.signal.aborted) reason = errorText(error);
-      else if (host.checking === abort)
+      if (!abort.signal.aborted) {
+        code = errorCode(error);
+        reason = errorText(error);
+      } else if (host.checking === abort)
         reason = `it did not answer within ${HEALTH_TIMEOUT_MS / 1_000} seconds`;
     } finally {
       clearTimeout(timer);
@@ -317,7 +320,7 @@ export function createGatewayHosts(input: {
     if (
       !health &&
       host.instanceId !== undefined &&
-      (reason === "ECONNRESET" || reason === "ECONNREFUSED")
+      (code === "ECONNRESET" || code === "ECONNREFUSED")
     )
       return restartedHost(
         host,
@@ -522,8 +525,14 @@ export async function readBody(response: http.IncomingMessage, limit: number) {
 
 const codedError = z.object({ code: z.string() });
 
+const ERROR_WORDS = new Map([
+  ["ECONNREFUSED", "it refused the connection"],
+  ["ECONNRESET", "it closed the connection"],
+  ["ETIMEDOUT", "it did not answer"],
+]);
+
 /** A network error's code (ECONNREFUSED), else its message. */
-export function errorText(cause: unknown): string {
+function errorCode(cause: unknown): string {
   if (!(cause instanceof Error)) return String(cause);
 
   return (
@@ -531,4 +540,11 @@ export function errorText(cause: unknown): string {
     codedError.safeParse(cause.cause).data?.code ??
     cause.message
   );
+}
+
+/** A network error for a person: common codes in words. */
+export function errorText(cause: unknown): string {
+  const code = errorCode(cause);
+
+  return ERROR_WORDS.get(code) ?? code;
 }
