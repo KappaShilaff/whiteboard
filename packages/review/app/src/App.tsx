@@ -717,7 +717,8 @@ function ReviewLayoutContent({
             </div>
           ) : null}
           {activeView === "review" && documentState.state === "ready" && (
-            <ReviewToc entries={tocEntries} />
+            // Every document but the scratchpad opens with a review header.
+            <ReviewToc entries={tocEntries} besideHeader={!scratchpad} />
           )}
           <section
             ref={scrollRegionRef}
