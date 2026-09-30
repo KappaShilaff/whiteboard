@@ -110,6 +110,8 @@ export interface GlobalReviewServerInput {
   relay?: ReviewDesktopVerbRelay;
   /** Electron's Review crash dump directory; `/crash-reports` reads only inside it. */
   crashDumpsDir?: string;
+  /** A remote's server restarted with a new token; Desktop attaches again. */
+  onRemoteHostRestarted?(alias: string): void;
   log?(message: string): void;
 }
 
@@ -258,6 +260,7 @@ export function createGlobalReviewServer(
     version: readReviewPackageVersion(import.meta.url),
     home: devReviewHome(),
     relay,
+    restarted: (alias) => input.onRemoteHostRestarted?.(alias),
     log: input.log,
   });
 
