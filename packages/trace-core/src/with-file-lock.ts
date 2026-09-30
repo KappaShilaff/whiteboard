@@ -182,7 +182,8 @@ export function processStartIdentity(pid: number): string | null {
 
     const ps = spawnSync("ps", ["-o", "lstart=", "-p", String(pid)], {
       encoding: "utf8",
-      env: { ...process.env, LC_ALL: "C" },
+      // lstart prints local time: pin language and zone so every reader agrees.
+      env: { ...process.env, LC_ALL: "C", TZ: "UTC" },
     });
 
     return (ps.status === 0 && ps.stdout.trim()) || null;
