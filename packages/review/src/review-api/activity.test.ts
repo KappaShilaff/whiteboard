@@ -56,7 +56,7 @@ it("renews reported work, expires abandoned work, and does not end another autho
   expect(vi.getTimerCount()).toBe(0);
 });
 
-it("streams activity separately from document versions and closes the stream on deletion", async () => {
+it("streams activity separately from document versions and reports deletion on the stream", async () => {
   const store = new ReviewStore(":memory:", {
     validatePins: async () => {},
     validateSource: async () => {},
@@ -82,11 +82,11 @@ it("streams activity separately from document versions and closes the stream on 
   const changed = vi.fn<Parameters<ReviewStore["subscribe"]>[0]>();
   store.subscribe(changed);
   const abort = new AbortController();
-  const stream = client.watch(reviewId, abort.signal);
+  const stream = client.watch([{ reviewId }], abort.signal);
 
   try {
     expect((await stream.next()).value).toMatchObject({
-      activity: { workingCount: 0 },
+      value: { activity: { workingCount: 0 } },
     });
 
     const input = {
@@ -97,13 +97,13 @@ it("streams activity separately from document versions and closes the stream on 
 
     await client.post(`/${reviewId}/activity`, input);
     expect((await stream.next()).value).toMatchObject({
-      activity: { workingCount: 1, focuses: [input.focus] },
+      value: { activity: { workingCount: 1, focuses: [input.focus] } },
     });
     expect(changed).not.toHaveBeenCalled();
     expect(store.history(reviewId)).toHaveLength(1);
-    const reconnect = client.watch(reviewId, abort.signal);
+    const reconnect = client.watch([{ reviewId }], abort.signal);
     expect((await reconnect.next()).value).toMatchObject({
-      activity: { workingCount: 1, focuses: [input.focus] },
+      value: { activity: { workingCount: 1, focuses: [input.focus] } },
     });
     await reconnect.return(undefined);
     await store.execute({
@@ -111,17 +111,18 @@ it("streams activity separately from document versions and closes the stream on 
       leaseId: input.leaseId,
       operation: { type: "delete", reviewId },
     });
-    // A reader may already have buffered a pre-deletion snapshot.
-    await expect(async () => {
-      for await (const _snapshot of stream) {
-      }
-    }).rejects.toThrow(Error);
+    expect((await stream.next()).value).toEqual({
+      kind: "review",
+      reviewId,
+      error: expect.stringMatching(/not found/i),
+    });
     await expect(client.post(`/${reviewId}/activity`, input)).rejects.toThrow(
       /not found/i,
     );
     expect(store.activity.read(reviewId).workingCount).toBe(0);
   } finally {
     abort.abort();
+    await stream.return(undefined);
     await store.close();
   }
 });
