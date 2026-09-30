@@ -26,6 +26,7 @@ import {
 import { AgentSelectionProvider, useAgentSelection } from "./agent-selection";
 import { observeAgentTextSelection } from "./agent-text-selection";
 import { AskHistoryProvider } from "./ask-history";
+import { AskThreadMarks } from "./ask-marks";
 import { AskHistoryControl } from "./ask-panel";
 import {
   AuthoringActivityBadge,
@@ -766,6 +767,10 @@ function ReviewLayoutContent({
                       <documentState.document.render />
                     </ReviewDocumentBoundary>
                   </article>
+                  <AskThreadMarks
+                    articleRef={articleRef}
+                    revision={documentRevision}
+                  />
                 </>
               ) : (
                 <ReviewDocumentLoadState state={documentState} />
