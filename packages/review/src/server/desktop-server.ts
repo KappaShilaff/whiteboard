@@ -257,6 +257,7 @@ export function createGlobalReviewServer(
     local: (request) => laptopApi.fetch(request),
     version: readReviewPackageVersion(import.meta.url),
     home: devReviewHome(),
+    relay,
     log: input.log,
   });
 
