@@ -813,6 +813,7 @@ function ReviewLayoutContent({
             shellStyles.resizer,
             shellStyles.peekResizer,
             askDocked && shellStyles.peekResizerTray,
+            sidePeekResize.isResizing && shellStyles.peekResizerActive,
           )}
           {...sidePeekResize.separatorProps}
         />
