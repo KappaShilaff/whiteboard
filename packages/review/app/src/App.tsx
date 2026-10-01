@@ -476,7 +476,6 @@ function ReviewLayoutContent({
       )}
       style={appStyle}
       data-peek-open={rightPanelOpen || undefined}
-      data-resizing={sidePeekResize.isResizing || undefined}
       data-document-header={document.header || undefined}
       data-database-lens={document.databaseLens || undefined}
     >
