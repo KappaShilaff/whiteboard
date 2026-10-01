@@ -214,17 +214,6 @@ async function serverNeverStarted(
   );
 }
 
-/** The same review, in the window a restart left behind. */
-async function reopenReview(ctx, review) {
-  const opened = await ctx.api(`/reviews-api/${review.reviewId}/open`, "POST", {});
-
-  assert.equal(opened.status, 200, JSON.stringify(opened.value));
-
-  const page = await ctx.apiCanvasFor(review.title);
-
-  return page.locator(".review-canvas-root [data-review-api]");
-}
-
 /** `go install` writes to GOPATH/bin, and GOPATH defaults to $HOME/go inside the temp root. */
 const goToolPath = (ctx, tool) => path.join(ctx.home, "go/bin", tool);
 
@@ -316,28 +305,20 @@ export async function runLspJourney(ctx, id) {
     ],
   });
 
-  let canvas = review.canvas;
-
-  // rust-analyzer can lose a race with the workspace folder, and only a race earns a retry in another window.
-  for (let attempt = 1; ; attempt++) {
-    try {
-      await hoverAndJump(ctx, id, language, canvas, lines, callLine);
-
-      return;
-    } catch (error) {
-      if (
-        attempt >= 3 ||
-        !language.serverStartLog ||
-        !(await serverNeverStarted(ctx, language.serverStartLog))
-      )
-        throw error;
-
-      await ctx.knownBug(
-        "A review's Rust language server never starts when the extension wins a race with the workspace folder",
+  try {
+    await hoverAndJump(ctx, id, language, review.canvas, lines, callLine);
+  } catch (error) {
+    // Name the old race when the extension activated and never tried to start its server.
+    if (
+      language.serverStartLog &&
+      (await serverNeverStarted(ctx, language.serverStartLog))
+    )
+      throw new Error(
+        `${language.serverStartLog.extensionId} activated before the review checkout was a workspace folder`,
+        { cause: error },
       );
-      await ctx.restartDesktop();
-      canvas = await reopenReview(ctx, review);
-    }
+
+    throw error;
   }
 }
 

@@ -161,6 +161,15 @@ Server` cannot help — the captured workspace is never re-read. The fix
   patch never reaches it. A fix therefore needs an install-time manifest patch
   that replaces the implicit event with a Review-owned one fired after
   `addFolders`.
+- **Fix:** the Review window rewrites rust-analyzer's activation events in the
+  renderer, where every install path reads them: the implicit
+  `onLanguage:rust` gives way to `onReviewWorkspaceLanguage:rust`, which
+  `acquire` fires once the checkout is a folder. A second path to the same dead
+  server remained: releasing the last checkout emptied the folder list,
+  `onWorkspaceFolderChanges` stopped the client for `{kind: "Empty"}` without
+  updating its captured workspace, and the next folder read as no change. The
+  last released checkout now stays a folder until another one replaces it. The
+  journey no longer retries in a new window; the race's signature fails it.
 
 ## Home offers no way to dismiss an active review
 
