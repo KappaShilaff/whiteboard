@@ -388,7 +388,15 @@ export async function runLspJourney(ctx, id) {
 }
 
 /** The reader's half: from the open review to the Source window Go to Definition opens. */
-async function hoverAndJump(ctx, id, language, canvas, lines, callLine, pass = "") {
+async function hoverAndJump(
+  ctx,
+  id,
+  language,
+  canvas,
+  lines,
+  callLine,
+  pass = "",
+) {
   const page = canvas.page();
 
   const editor = canvas
