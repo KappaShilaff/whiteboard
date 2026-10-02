@@ -122,7 +122,6 @@ export const LANGUAGES = {
       failed: "Bootstrap error", // A server that could not be unpacked logs this instead: a different bug.
       stopped: "Disposing language client",
     },
-    // Releasing the last checkout once stopped rust-analyzer for good, so the review is closed and read again.
     reopensReview: true,
     optionalExtension: {
       label: "Rust (rust-analyzer)",
@@ -255,7 +254,10 @@ const goToolPath = (ctx, tool) => path.join(ctx.home, "go/bin", tool);
 /** Nothing the Go extension downloads may exist before the reader consents to its group. */
 async function assertNothingInstalledYet(ctx, tool) {
   assert.equal(
-    await access(goToolPath(ctx, tool)).then(() => true, () => false),
+    await access(goToolPath(ctx, tool)).then(
+      () => true,
+      () => false,
+    ),
     false,
     `${tool} was installed before the Go group was consented to`,
   );
@@ -273,7 +275,11 @@ async function assertNothingInstalledYet(ctx, tool) {
 /** Waits for the consented-to Go extension to provision `tool` into the journey's GOPATH. */
 async function provisionLanguageServer(ctx, tool) {
   await ctx.until(
-    () => access(goToolPath(ctx, tool)).then(() => true, () => false),
+    () =>
+      access(goToolPath(ctx, tool)).then(
+        () => true,
+        () => false,
+      ),
     `${tool} to be installed into the journey's GOPATH`,
     300000,
   );
@@ -359,7 +365,7 @@ export async function runLspJourney(ctx, id) {
   if (!language.reopensReview) return;
 
   await closeReview(ctx, review.canvas, review.title);
-  // Nothing observable marks the folder change reaching the extension host; give it the time a reader would.
+  // Allow the folder release to reach the extension host before reopening.
   await review.canvas.page().waitForTimeout(5000);
 
   const canvas = await reopenReview(ctx, review);
@@ -400,9 +406,7 @@ async function hoverAndJump(
   const page = canvas.page();
 
   const editor = canvas
-    .locator(
-      `[data-review-inline-editor="${language.peekFile}"]`,
-    )
+    .locator(`[data-review-inline-editor="${language.peekFile}"]`)
     .first();
 
   const welcome = page

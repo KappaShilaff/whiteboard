@@ -17,7 +17,7 @@ function workspace() {
 }
 
 // dispose() queues its folder change; the next acquire runs after it.
-const settled = (target: ReturnType<typeof workspace>) => acquireReviewLanguageRoot(target, URI.file('/settle')).then(owner => owner);
+const settled = (target: ReturnType<typeof workspace>) => acquireReviewLanguageRoot(target, URI.file('/settle'));
 
 const a = URI.file('/checkouts/a');
 const b = URI.file('/checkouts/b');

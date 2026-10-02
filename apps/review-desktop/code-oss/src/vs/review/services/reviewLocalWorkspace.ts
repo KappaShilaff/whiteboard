@@ -7,12 +7,7 @@ type ReviewLanguageRoots = Pick<IWorkspaceEditingService, "addFolders" | "remove
 
 const sessions = new WeakMap<ReviewLanguageRoots, { queue: Queue<void>; roots: Map<string, number>; kept: URI | undefined }>();
 
-/**
- * Native live files and retained-source language adapters share folder ownership.
- *
- * The last released root stays a folder until another root replaces it: rust-analyzer
- * stops its server when the folder list empties and never starts it for the next folder.
- */
+/** Keep the last root until its replacement arrives: rust-analyzer stops when the workspace empties. */
 export async function acquireReviewLanguageRoot(workspace: ReviewLanguageRoots, root: URI): Promise<IDisposable> {
 	let session = sessions.get(workspace);
 	if (!session) {

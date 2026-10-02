@@ -6,7 +6,7 @@ import { reviewWorkspaceLanguageEvent, rewriteReviewActivationEvents } from './r
 const extension = (id: string) => ({ identifier: new ExtensionIdentifier(id) });
 
 test('rust-analyzer waits for the review checkout instead of the first Rust model', () => {
-	const events = rewriteReviewActivationEvents(extension('rust-lang.rust-analyzer'), [
+	const events = rewriteReviewActivationEvents(extension('Rust-Lang.Rust-Analyzer'), [
 		'workspaceContains:Cargo.toml',
 		'onLanguage:rust',
 		'onCommand:rust-analyzer.analyzerStatus',
@@ -18,11 +18,7 @@ test('rust-analyzer waits for the review checkout instead of the first Rust mode
 	]);
 });
 
-test('the extension id matches case-insensitively, like the extension host', () => {
-	assert.ok(rewriteReviewActivationEvents(extension('Rust-Lang.Rust-Analyzer'), ['onLanguage:rust']).includes(reviewWorkspaceLanguageEvent('rust')));
-});
-
 test('other language extensions keep their activation events', () => {
 	const events = ['onLanguage:python', 'workspaceContains:pyproject.toml'];
-	assert.equal(rewriteReviewActivationEvents(extension('ms-python.python'), events), events);
+	assert.deepEqual(rewriteReviewActivationEvents(extension('ms-python.python'), events), events);
 });

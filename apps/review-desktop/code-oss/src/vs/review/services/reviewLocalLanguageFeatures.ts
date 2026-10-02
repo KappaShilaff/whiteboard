@@ -167,7 +167,7 @@ export class ReviewLocalLanguageFeatures extends Disposable {
 		if (model.isDisposed()) { owned.dispose(); return undefined; }
 			const languageId = reference.object.textEditorModel.getLanguageId();
 			await this.extensions.activateByEvent(`onLanguage:${languageId}`);
-			// The checkout is a folder by now, and folder changes reach the extension host before this request.
+			// Folder changes reach the extension host before this activation request.
 			await this.extensions.activateByEvent(reviewWorkspaceLanguageEvent(languageId));
 			if (model.isDisposed()) { owned.dispose(); return undefined; }
 			const lifetime = new RefCountedDisposable(owned);

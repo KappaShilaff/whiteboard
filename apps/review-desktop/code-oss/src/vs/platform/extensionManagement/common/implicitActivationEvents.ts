@@ -21,10 +21,7 @@ export class ImplicitActivationEventsImpl {
 		this._generators.set(extensionPointName, generator as IActivationEventsGenerator<unknown>);
 	}
 
-	/**
-	 * Review: lets a window adjust an extension's final activation events, explicit and implicit.
-	 * Set it before extensions are scanned; results are cached per description.
-	 */
+	/** Set before scanning extensions; rewritten events are cached per description. */
 	public setRewrite(rewrite: ((desc: IExtensionDescription, activationEvents: string[]) => string[]) | undefined): void {
 		this._rewrite = rewrite;
 	}
