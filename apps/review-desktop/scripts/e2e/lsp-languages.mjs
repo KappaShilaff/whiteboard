@@ -120,7 +120,10 @@ export const LANGUAGES = {
       activated: "Starting language client",
       started: "Using server binary at",
       failed: "Bootstrap error", // A server that could not be unpacked logs this instead: a different bug.
+      stopped: "Disposing language client",
     },
+    // Releasing the last checkout once stopped rust-analyzer for good, so the review is closed and read again.
+    reopensReview: true,
     optionalExtension: {
       label: "Rust (rust-analyzer)",
       extensionId: "rust-lang.rust-analyzer",
@@ -211,6 +214,38 @@ async function serverNeverStarted(
 
   return (
     log.includes(activated) && !log.includes(started) && !log.includes(failed)
+  );
+}
+
+/** The same review, in a fresh tab after its old one closed. */
+async function reopenReview(ctx, review) {
+  const opened = await ctx.api(
+    `/reviews-api/${review.reviewId}/open`,
+    "POST",
+    {},
+  );
+
+  assert.equal(opened.status, 200, JSON.stringify(opened.value));
+
+  const page = await ctx.apiCanvasFor(review.title);
+
+  return page.locator(".review-canvas-root [data-review-api]");
+}
+
+/** Closes the review's tab, which detaches its peek and releases the checkout behind it. */
+async function closeReview(ctx, canvas, title) {
+  const tab = canvas
+    .page()
+    .locator(".tabs-container .tab")
+    .filter({ hasText: title })
+    .first();
+
+  await tab.hover();
+  await tab.locator(".tab-actions .action-label").first().click();
+  await ctx.until(
+    async () => (await tab.count()) === 0,
+    `the ${title} tab to close`,
+    30000,
   );
 }
 
@@ -320,10 +355,40 @@ export async function runLspJourney(ctx, id) {
 
     throw error;
   }
+
+  if (!language.reopensReview) return;
+
+  await closeReview(ctx, review.canvas, review.title);
+  // Nothing observable marks the folder change reaching the extension host; give it the time a reader would.
+  await review.canvas.page().waitForTimeout(5000);
+
+  const canvas = await reopenReview(ctx, review);
+
+  try {
+    await hoverAndJump(
+      ctx,
+      id,
+      language,
+      canvas,
+      lines,
+      callLine,
+      " after the review reopens",
+    );
+  } catch (error) {
+    const log = await extensionLog(ctx, language.serverStartLog.extensionId);
+
+    if (log.includes(language.serverStartLog.stopped))
+      throw new Error(
+        `${language.serverStartLog.extensionId} stopped its client when the review released its last checkout`,
+        { cause: error },
+      );
+
+    throw error;
+  }
 }
 
 /** The reader's half: from the open review to the Source window Go to Definition opens. */
-async function hoverAndJump(ctx, id, language, canvas, lines, callLine) {
+async function hoverAndJump(ctx, id, language, canvas, lines, callLine, pass = "") {
   const page = canvas.page();
 
   const editor = canvas
@@ -413,7 +478,7 @@ async function hoverAndJump(ctx, id, language, canvas, lines, callLine) {
   );
 
   assert.match(hovered, language.hoverText);
-  ctx.check(`${id}: hover shows the signature from the language server`);
+  ctx.check(`${id}: hover shows the signature from the language server${pass}`);
 
   await page.keyboard.press("Escape");
   await token.click({ position: await aim() });
@@ -423,5 +488,5 @@ async function hoverAndJump(ctx, id, language, canvas, lines, callLine) {
   await closeSourceWindow(
     await sourceWindowFor(ctx, path.basename(language.definitionFile)),
   );
-  ctx.check(`${id}: go to definition crosses files`);
+  ctx.check(`${id}: go to definition crosses files${pass}`);
 }
